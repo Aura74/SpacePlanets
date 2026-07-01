@@ -3,13 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rymdäventyret – Utforska Vårt Solsystem</title>
-    <meta name="description" content="En interaktiv och barnvänlig guide till vårt solsystem med fakta om planeter, månen och månlandningar.">
+    <title>Rymdskeppsarkivet – Jämför filmens ikoniska rymdskepp</title>
+    <meta name="description" content="En filmisk jämförelse av science fiction-historiens mest ikoniska rymdskepp – från Millennium Falcon till Rocinante. Ställ skepp mot skepp, jämför storlek, besättning och bestyckning.">
+
+    <!-- Förhindra fel tema-blink: sätt tema + prestandaläge före paint -->
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('theme');
+                if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', t);
+
+                var p = localStorage.getItem('spaceships:perfMode');
+                if (!p || p === 'auto') {
+                    var n = navigator;
+                    var lowCores = (n.hardwareConcurrency || 8) <= 4;
+                    var lowMem = (n.deviceMemory || 8) <= 4;
+                    var conn = n.connection || {};
+                    var slow = conn.saveData || /^(2g|slow-2g)/.test(conn.effectiveType || '');
+                    p = (lowCores || lowMem || slow) ? 'lite' : 'standard';
+                }
+                document.documentElement.setAttribute('data-perf', p);
+            } catch (e) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.documentElement.setAttribute('data-perf', 'standard');
+            }
+        })();
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -17,7 +42,7 @@
     <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
 
-    <!-- AOS - Animate On Scroll -->
+    <!-- AOS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
 
     <!-- Custom CSS -->
@@ -25,955 +50,215 @@
 </head>
 <body>
     <!-- ========== LADDNINGSSKÄRM ========== -->
-    <div id="loader" class="loader">
+    <div id="loader" class="loader" aria-hidden="true">
         <div class="loader-content">
-            <div class="loader-planet"></div>
             <div class="loader-ring"></div>
-            <p class="loader-text">Laddar universum<span class="dots">...</span></p>
+            <p class="loader-text">Initierar arkivet<span class="dots">…</span></p>
         </div>
     </div>
 
     <!-- ========== NAVIGATION ========== -->
     <nav id="navbar" class="navbar">
         <div class="nav-container">
-            <a href="#hero" class="nav-logo">
-                <i class="fas fa-rocket"></i>
-                <span>Rymdäventyret</span>
+            <a href="#hero" class="nav-logo" aria-label="Rymdskeppsarkivet – till toppen">
+                <span class="nav-logo__mark"><i class="fa-solid fa-satellite"></i></span>
+                <span class="nav-logo__text">Rymdskepps<em>arkivet</em></span>
             </a>
-            <button class="nav-toggle" id="navToggle" aria-label="Öppna meny">
-                <span></span><span></span><span></span>
-            </button>
+
             <ul class="nav-menu" id="navMenu">
-                <li><a href="#solsystem" class="nav-link">Solsystemet</a></li>
-                <li><a href="#planeter" class="nav-link">Planeterna</a></li>
-                <li><a href="#manen" class="nav-link">Månen</a></li>
-                <li><a href="#manlandningar" class="nav-link">Månlandningar</a></li>
-                <li><a href="#gravity" class="nav-link">Gravitationslabb</a></li>
-                <li><a href="#roliga-fakta" class="nav-link">Roliga Fakta</a></li>
+                <li><a href="#flottan" class="nav-link">Flottan</a></li>
+                <li><a href="#duell" class="nav-link">Jämför</a></li>
+                <li><a href="#skala" class="nav-link">Storleksskala</a></li>
+                <li><a href="#tidslinje" class="nav-link">Tidslinje</a></li>
             </ul>
+
+            <div class="nav-controls">
+                <!-- Prestandaläge -->
+                <div class="perf-switch" role="group" aria-label="Prestandaläge">
+                    <button class="perf-btn" data-perf-set="lite" title="Lätt – för tröga datorer">Lätt</button>
+                    <button class="perf-btn" data-perf-set="standard" title="Standard">Standard</button>
+                    <button class="perf-btn" data-perf-set="max" title="Alla effekter">Max</button>
+                </div>
+                <!-- Tema -->
+                <button class="theme-toggle" id="themeToggle" aria-label="Växla ljust/mörkt tema" title="Växla tema">
+                    <i class="fa-solid fa-moon icon-moon"></i>
+                    <i class="fa-solid fa-sun icon-sun"></i>
+                </button>
+                <button class="nav-toggle" id="navToggle" aria-label="Öppna meny" aria-expanded="false">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
         </div>
     </nav>
 
-    <!-- ========== HERO SEKTION ========== -->
-    <section id="hero" class="hero">
-        <canvas id="starsCanvas"></canvas>
-        <div class="hero-content" data-aos="fade-up" data-aos-duration="1500">
-            <h1 class="hero-title">
-                <span class="title-line">Utforska</span>
-                <span class="title-line gradient-text">Vårt Solsystem</span>
+    <!-- ========== HERO ========== -->
+    <header id="hero" class="hero">
+        <canvas id="starsCanvas" aria-hidden="true"></canvas>
+        <div class="hero-grid" aria-hidden="true"></div>
+        <div class="hero-inner container">
+            <p class="eyebrow" data-aos="fade-up">Film &amp; TV · Science Fiction</p>
+            <h1 class="hero-title" data-aos="fade-up" data-aos-delay="80">
+                Rymdskeppen som<br><span class="text-accent">formade science fiction</span>
             </h1>
-            <p class="hero-subtitle">En fantastisk resa genom rymden – från den brinnande solen till den avlägsna Neptunus</p>
-            <div class="hero-buttons">
-                <a href="#solsystem" class="btn btn-primary">
-                    <i class="fas fa-rocket"></i> Börja Utforska
-                </a>
-                <a href="#gravity" class="btn btn-secondary">
-                    <i class="fas fa-flask"></i> Gravitationslabb
-                </a>
-            </div>
-            <div class="scroll-indicator">
-                <div class="mouse">
-                    <div class="mouse-wheel"></div>
-                </div>
-                <p>Scrolla ner</p>
-            </div>
-        </div>
-        <div class="hero-astronaut" id="astronaut">
-            <img src="https://cdn-icons-png.flaticon.com/512/2927/2927506.png" alt="Astronaut" width="180">
-        </div>
-    </section>
-
-    <!-- ========== SOLSYSTEM ANIMATION ========== -->
-    <section id="solsystem" class="section solsystem-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-sun"></i> Vårt Solsystem
-            </h2>
-            <p class="section-intro" data-aos="fade-up" data-aos-delay="100">
-                Vårt solsystem bildades för ungefär <strong>4,6 miljarder år</strong> sedan. Det består av solen,
-                åtta planeter, dvärgplaneter, månar, asteroider och kometer. Allt hålls ihop av solens enorma
-                gravitationskraft!
+            <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="160">
+                Ett filmiskt arkiv över historiens mest ikoniska rymdskepp. Jämför dem skepp mot skepp –
+                storlek, besättning, drivteknik och eldkraft – från <em>2001</em> till <em>The Expanse</em>.
             </p>
-        </div>
-
-        <div class="solar-system-container" data-aos="zoom-in" data-aos-duration="1500">
-            <div class="solar-system">
-                <div class="sun">
-                    <div class="sun-glow"></div>
-                    ☀️
-                </div>
-                <div class="orbit orbit-1"><div class="planet mercury" title="Merkurius">🪨</div></div>
-                <div class="orbit orbit-2"><div class="planet venus" title="Venus">🟡</div></div>
-                <div class="orbit orbit-3"><div class="planet earth" title="Jorden">🌍</div></div>
-                <div class="orbit orbit-4"><div class="planet mars" title="Mars">🔴</div></div>
-                <div class="orbit orbit-5"><div class="planet jupiter" title="Jupiter">🟤</div></div>
-                <div class="orbit orbit-6"><div class="planet saturn" title="Saturnus">🪐</div></div>
-                <div class="orbit orbit-7"><div class="planet uranus" title="Uranus">🔵</div></div>
-                <div class="orbit orbit-8"><div class="planet neptune" title="Neptunus">💙</div></div>
+            <div class="hero-actions" data-aos="fade-up" data-aos-delay="240">
+                <a href="#duell" class="btn btn-primary"><i class="fa-solid fa-code-compare"></i> Jämför två skepp</a>
+                <a href="#flottan" class="btn btn-ghost"><i class="fa-solid fa-rocket"></i> Utforska flottan</a>
+            </div>
+            <div class="hero-stats" data-aos="fade-up" data-aos-delay="320">
+                <div class="hero-stat"><span class="hero-stat__num" data-count="12">12</span><span class="hero-stat__label">Ikoniska skepp</span></div>
+                <div class="hero-stat"><span class="hero-stat__num" data-count="8">8</span><span class="hero-stat__label">Filmuniversum</span></div>
+                <div class="hero-stat"><span class="hero-stat__num" data-count="57">57</span><span class="hero-stat__label">År av film</span></div>
             </div>
         </div>
+        <a href="#flottan" class="scroll-cue" aria-label="Scrolla ner">
+            <span class="scroll-cue__mouse"><span></span></span>
+        </a>
+    </header>
 
-        <div class="container">
-            <div class="solar-stats" data-aos="fade-up">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-sun"></i></div>
-                    <div class="stat-number" data-count="1">1</div>
-                    <div class="stat-label">Stjärna</div>
+    <main>
+        <!-- ========== FLOTTAN (GALLERI) ========== -->
+        <section id="flottan" class="section">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Arkivet</p>
+                <h2 class="section-title" data-aos="fade-up">Flottan</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    Tolv skepp som definierat genren. Filtrera per universum och öppna ett kort för fullständig
+                    specifikation.
+                </p>
+
+                <div class="filter-bar" data-aos="fade-up" data-aos-delay="120" id="filterBar" role="group" aria-label="Filtrera flottan">
+                    <button class="filter-chip is-active" data-filter="all">Alla</button>
+                    <button class="filter-chip" data-filter="starwars">Star Wars</button>
+                    <button class="filter-chip" data-filter="startrek">Star Trek</button>
+                    <button class="filter-chip" data-filter="classic">Klassiker</button>
+                    <button class="filter-chip" data-filter="modern">Modern</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-globe"></i></div>
-                    <div class="stat-number" data-count="8">8</div>
-                    <div class="stat-label">Planeter</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-moon"></i></div>
-                    <div class="stat-number" data-count="200">200+</div>
-                    <div class="stat-label">Kända Månar</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-meteor"></i></div>
-                    <div class="stat-number" data-count="1000000">1M+</div>
-                    <div class="stat-label">Asteroider</div>
+
+                <div class="fleet-grid" id="fleetGrid"><!-- byggs av JS --></div>
+            </div>
+        </section>
+
+        <!-- ========== DUELL (HEAD-TO-HEAD) ========== -->
+        <section id="duell" class="section section--alt">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Skepp mot skepp</p>
+                <h2 class="section-title" data-aos="fade-up">Jämför två skepp</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    Välj två skepp och ställ dem mot varandra. Längd och besättning bygger på vedertagna källor;
+                    hastighets- och eldkraftsbetyg är redaktionella bedömningar för jämförbarhet.
+                </p>
+
+                <div class="duel" data-aos="fade-up" data-aos-delay="120">
+                    <div class="duel-selectors">
+                        <div class="duel-pick" data-side="a">
+                            <label for="selA" class="duel-pick__label">Skepp A</label>
+                            <select id="selA" class="duel-select"></select>
+                            <div class="duel-card" id="cardA"></div>
+                        </div>
+                        <div class="duel-vs" aria-hidden="true">VS</div>
+                        <div class="duel-pick" data-side="b">
+                            <label for="selB" class="duel-pick__label">Skepp B</label>
+                            <select id="selB" class="duel-select"></select>
+                            <div class="duel-card" id="cardB"></div>
+                        </div>
+                    </div>
+
+                    <div class="duel-bars" id="duelBars"><!-- byggs av JS --></div>
+                    <p class="duel-verdict" id="duelVerdict" aria-live="polite"></p>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ========== PLANETERNA ========== -->
-    <section id="planeter" class="section planets-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-globe-americas"></i> Planeterna
-            </h2>
-            <p class="section-intro" data-aos="fade-up" data-aos-delay="100">
-                Klicka på en planet för att lära dig mer! Varje planet är unik och fantastisk på sitt eget sätt.
-            </p>
-
-            <div class="planet-grid">
-                <!-- Merkurius -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="0" data-planet="merkurius">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere merkurius-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Merkurius</h3>
-                        <span class="planet-order">1:a planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 4 879 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: -180°C till 430°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: 59 jorddagar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 88 jorddagar</span></div>
-                        </div>
-                        <p class="planet-desc">Merkurius är den minsta planeten och närmast solen. Den har nästan ingen atmosfär och är full av kratrar, precis som vår måne! På dagen kan det bli 430°C varmt, men på natten sjunker temperaturen till -180°C.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> En dag på Merkurius (soluppgång till soluppgång) är längre än ett helt år på Merkurius!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Venus -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="100" data-planet="venus">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere venus-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Venus</h3>
-                        <span class="planet-order">2:a planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 12 104 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: ~465°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: 243 jorddagar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 225 jorddagar</span></div>
-                        </div>
-                        <p class="planet-desc">Venus kallas ofta för Jordens "tvilling" eftersom de är ungefär lika stora. Men Venus är den hetaste planeten i solsystemet på grund av en extrem växthuseffekt! Tjocka moln av svavelsyra täcker hela planeten.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Venus snurrar baklänges jämfört med de flesta andra planeter – solen går upp i väst och ner i öst!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Jorden -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="200" data-planet="jorden">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere earth-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Jorden</h3>
-                        <span class="planet-order">3:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 12 742 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: -89°C till 57°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: 24 timmar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 365,25 dagar</span></div>
-                        </div>
-                        <p class="planet-desc">Jorden är vårt hem – den enda planeten vi vet om som har liv! Ungefär 71% av ytan är täckt av vatten, vilket ger den sitt vackra blå utseende från rymden. Vår atmosfär skyddar oss från skadlig strålning.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Jorden är inte helt rund – den är lite tillplattad vid polerna och lite utbuktad vid ekvatorn!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Mars -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="300" data-planet="mars">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere mars-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Mars</h3>
-                        <span class="planet-order">4:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 6 779 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: -140°C till 20°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: 24h 37min</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 687 jorddagar</span></div>
-                        </div>
-                        <p class="planet-desc">Mars kallas "den röda planeten" på grund av järnoxid (rost) på ytan. Mars har det högsta berget i solsystemet – Olympus Mons – som är nästan tre gånger så högt som Mount Everest! Forskare letar efter tecken på liv.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Mars har två små månar som heter Phobos och Deimos, vilket betyder "Rädsla" och "Skräck" på grekiska!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Jupiter -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="0" data-planet="jupiter">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere jupiter-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Jupiter</h3>
-                        <span class="planet-order">5:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 139 820 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: ~-110°C (molntoppar)</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: ~10 timmar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 11,86 jordår</span></div>
-                        </div>
-                        <p class="planet-desc">Jupiter är solsystemets jätte! Den är så stor att alla andra planeter skulle rymmas inuti den. Den stora röda fläcken är en enorm storm som har rasat i över 350 år och är större än hela Jorden!</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Jupiter har minst 95 kända månar! Den största, Ganymedes, är större än planeten Merkurius!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Saturnus -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="100" data-planet="saturnus">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere saturn-sphere"></div>
-                        <div class="saturn-rings-visual"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Saturnus</h3>
-                        <span class="planet-order">6:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 116 460 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: ~-140°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: ~10,7 timmar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 29,5 jordår</span></div>
-                        </div>
-                        <p class="planet-desc">Saturnus är mest känd för sina fantastiska ringar, som består av miljarder bitar av is och sten. Ringarna sträcker sig hundratusentals kilometer ut men är bara cirka 10 meter tjocka! Saturnus är så lätt att den skulle flyta på vatten.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Saturnus har en sexkantig storm vid sin nordpol som är större än hela Jorden!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Uranus -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="200" data-planet="uranus">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere uranus-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Uranus</h3>
-                        <span class="planet-order">7:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 50 724 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: ~-224°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: ~17 timmar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 84 jordår</span></div>
-                        </div>
-                        <p class="planet-desc">Uranus är unik eftersom den ligger på sidan – den rullar runt solen som en boll! Den har en vacker blågrön färg som kommer från metan i atmosfären. Uranus har också ringar, men de är mycket svagare än Saturnus ringar.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Uranus kan ha 42 år av sommar följt av 42 år av vinter på grund av sin extrema lutning!
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Neptunus -->
-                <div class="planet-card" data-aos="fade-up" data-aos-delay="300" data-planet="neptunus">
-                    <div class="planet-card-visual">
-                        <div class="planet-sphere neptune-sphere"></div>
-                        <div class="planet-orbit-ring"></div>
-                    </div>
-                    <div class="planet-card-content">
-                        <h3>Neptunus</h3>
-                        <span class="planet-order">8:e planeten från solen</span>
-                        <div class="planet-facts">
-                            <div class="fact"><i class="fas fa-ruler"></i> <span>Diameter: 49 244 km</span></div>
-                            <div class="fact"><i class="fas fa-temperature-high"></i> <span>Temp: ~-214°C</span></div>
-                            <div class="fact"><i class="fas fa-clock"></i> <span>Dag: ~16 timmar</span></div>
-                            <div class="fact"><i class="fas fa-sync"></i> <span>År: 165 jordår</span></div>
-                        </div>
-                        <p class="planet-desc">Neptunus är den mest avlägsna planeten i vårt solsystem. Den har de starkaste vindarna – upp till 2 100 km/h! Dess djupblå färg kommer från metan i atmosfären. Neptunus har 16 kända månar, varav Triton är den största.</p>
-                        <div class="planet-fun-fact">
-                            <i class="fas fa-star"></i> <strong>Visste du?</strong> Neptunus upptäcktes med matematik innan den sågs med teleskop! Forskare beräknade var den borde vara!
-                        </div>
-                    </div>
-                </div>
+        <!-- ========== STORLEKSSKALA ========== -->
+        <section id="skala" class="section">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Perspektiv</p>
+                <h2 class="section-title" data-aos="fade-up">Storleksskala</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    Från en X-wing på 12,5 meter till en Borg-kub på 3 kilometer. Siluetterna är ritade i relativ
+                    skala (kvadratrot för läsbarhet) – verklig längd visas till höger.
+                </p>
+                <div class="scale-chart" id="scaleChart" data-aos="fade-up" data-aos-delay="120"><!-- byggs av JS --></div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- ========== MÅNEN ========== -->
-    <section id="manen" class="section moon-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-moon"></i> Månen – Jordens Följeslagare
-            </h2>
-
-            <div class="moon-hero" data-aos="fade-up">
-                <div class="moon-visual">
-                    <div class="moon-sphere">
-                        <div class="moon-crater crater-1"></div>
-                        <div class="moon-crater crater-2"></div>
-                        <div class="moon-crater crater-3"></div>
-                        <div class="moon-crater crater-4"></div>
-                        <div class="moon-crater crater-5"></div>
-                    </div>
-                    <div class="moon-glow"></div>
-                    <div class="moon-phases">
-                        <div class="phase" title="Nymåne">🌑</div>
-                        <div class="phase" title="Tilltagande skära">🌒</div>
-                        <div class="phase" title="Första kvarteret">🌓</div>
-                        <div class="phase" title="Tilltagande halvmåne">🌔</div>
-                        <div class="phase" title="Fullmåne">🌕</div>
-                        <div class="phase" title="Avtagande halvmåne">🌖</div>
-                        <div class="phase" title="Sista kvarteret">🌗</div>
-                        <div class="phase" title="Avtagande skära">🌘</div>
-                    </div>
-                </div>
-                <div class="moon-info">
-                    <h3>Fakta om Månen</h3>
-                    <div class="moon-stats-grid">
-                        <div class="moon-stat">
-                            <i class="fas fa-ruler-horizontal"></i>
-                            <strong>Diameter</strong>
-                            <span>3 474 km</span>
-                        </div>
-                        <div class="moon-stat">
-                            <i class="fas fa-arrows-alt-h"></i>
-                            <strong>Avstånd till Jorden</strong>
-                            <span>~384 400 km</span>
-                        </div>
-                        <div class="moon-stat">
-                            <i class="fas fa-weight-hanging"></i>
-                            <strong>Gravitation</strong>
-                            <span>1/6 av Jordens</span>
-                        </div>
-                        <div class="moon-stat">
-                            <i class="fas fa-clock"></i>
-                            <strong>Omloppstid</strong>
-                            <span>27,3 dagar</span>
-                        </div>
-                        <div class="moon-stat">
-                            <i class="fas fa-thermometer-half"></i>
-                            <strong>Temperatur</strong>
-                            <span>-173°C till 127°C</span>
-                        </div>
-                        <div class="moon-stat">
-                            <i class="fas fa-birthday-cake"></i>
-                            <strong>Ålder</strong>
-                            <span>~4,5 miljarder år</span>
-                        </div>
-                    </div>
-                    <p class="moon-description">
-                        Månen är Jordens enda naturliga satellit och det närmaste himmelska objektet. Den bildades troligen
-                        när ett stort objekt – ungefär lika stort som Mars – kolliderade med den unga Jorden. Månen har ingen
-                        atmosfär, inget vatten på ytan (men is vid polerna!) och ingen vind. Fotavtrycken som astronauterna
-                        lämnade finns kvar än idag och kommer att finnas i miljontals år!
-                    </p>
-                </div>
+        <!-- ========== TIDSLINJE ========== -->
+        <section id="tidslinje" class="section section--alt">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Filmhistoria</p>
+                <h2 class="section-title" data-aos="fade-up">Tidslinje</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    När varje skepp först nådde duken – ett tvärsnitt av science fiction från 1968 till idag.
+                </p>
+                <div class="timeline" id="timeline"><!-- byggs av JS --></div>
             </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
-    <!-- ========== MÅNLANDNINGAR ========== -->
-    <section id="manlandningar" class="section landings-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-flag-usa"></i> Månlandningarna – Apollo-programmet
-            </h2>
-            <p class="section-intro" data-aos="fade-up" data-aos-delay="100">
-                Mellan 1969 och 1972 lyckades NASA skicka 12 astronauter till månens yta. Här är de historiska
-                uppdragen som förändrade mänsklighetens historia för alltid.
-            </p>
-
-            <div class="swiper landing-swiper" data-aos="fade-up" data-aos-delay="200">
-                <div class="swiper-wrapper">
-                    <!-- Apollo 11 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge">Apollo 11</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 20 juli 1969
-                            </div>
-                            <div class="landing-image-placeholder">
-                                <i class="fas fa-flag fa-3x"></i>
-                                <span>Första Månlandningen</span>
-                            </div>
-                            <h3>Det Första Steget</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Neil Armstrong</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Buzz Aldrin</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Michael Collins</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <blockquote class="landing-quote">
-                                "Ett litet steg för en människa, ett stort kliv för mänskligheten."
-                                <cite>– Neil Armstrong</cite>
-                            </blockquote>
-                            <p>Neil Armstrong blev den första människan att sätta sin fot på månen. Tillsammans med Buzz Aldrin tillbringade de cirka 2,5 timmar utanför månlandaren Eagle. Michael Collins kretsade runt månen i kommandokapseln Columbia.</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 21h 36min på ytan</span>
-                                <span><i class="fas fa-walking"></i> 2h 31min utanför</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 12 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge">Apollo 12</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 19 november 1969
-                            </div>
-                            <div class="landing-image-placeholder">
-                                <i class="fas fa-bolt fa-3x"></i>
-                                <span>Blixtlandningen</span>
-                            </div>
-                            <h3>Precisionslandningen</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Pete Conrad</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Alan Bean</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Richard Gordon</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>Apollo 12 träffades av blixten två gånger under uppskjutningen men lyckades ändå! De landade med fantastisk precision – bara 183 meter från den obemannade sonden Surveyor 3. De tog med delar av Surveyor 3 tillbaka till Jorden.</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 31h 31min på ytan</span>
-                                <span><i class="fas fa-walking"></i> 2 promenader utanför</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 13 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card apollo13-card">
-                            <div class="landing-badge badge-danger">Apollo 13</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 11–17 april 1970
-                            </div>
-                            <div class="landing-image-placeholder danger-bg">
-                                <i class="fas fa-exclamation-triangle fa-3x"></i>
-                                <span>"Houston, vi har ett problem"</span>
-                            </div>
-                            <h3>Den Lyckade Misslyckandet</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Jim Lovell</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Jack Swigert</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Fred Haise</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>En syretank exploderade på väg till månen! Månlandningen avbröts och besättningen fick använda månlandaren som "livbåt" för att överleva resan tillbaka till Jorden. Tack vare otroligt ingenjörsarbete på NASA kom alla tre astronauterna hem levande. Det kallas "den mest framgångsrika misslyckandet" i rymdhistorien.</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-times-circle"></i> Landade aldrig</span>
-                                <span><i class="fas fa-heart"></i> Alla överlevde!</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 14 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge">Apollo 14</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 5 februari 1971
-                            </div>
-                            <div class="landing-image-placeholder">
-                                <i class="fas fa-golf-ball fa-3x"></i>
-                                <span>Golf på Månen!</span>
-                            </div>
-                            <h3>Golfturen på Månen</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Alan Shepard</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Edgar Mitchell</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Stuart Roosa</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>Alan Shepard – den äldsta personen som gått på månen vid 47 års ålder – tog med sig ett golfklubba-huvud och slog två golfbollar! Han sa att den andra bollen flög "miles and miles and miles". Uppdraget samlade 42 kg månstenar.</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 33h 31min på ytan</span>
-                                <span><i class="fas fa-walking"></i> 2 promenader utanför</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 15 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge">Apollo 15</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 30 juli 1971
-                            </div>
-                            <div class="landing-image-placeholder">
-                                <i class="fas fa-car fa-3x"></i>
-                                <span>Första Månbilen!</span>
-                            </div>
-                            <h3>Månbilens Debut</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>David Scott</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>James Irwin</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Alfred Worden</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>Första gången en Lunar Roving Vehicle (månbil) användes! David Scott utförde också ett berömt experiment: han släppte en hammare och en fjäder samtidigt framför kameran och visade att de föll med samma hastighet i månens vakuum – precis som Galileo förutsagt!</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 66h 55min på ytan</span>
-                                <span><i class="fas fa-car"></i> 27,9 km med månbilen</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 16 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge">Apollo 16</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 21 april 1972
-                            </div>
-                            <div class="landing-image-placeholder">
-                                <i class="fas fa-mountain fa-3x"></i>
-                                <span>Höglandet</span>
-                            </div>
-                            <h3>Höglandets Utforskare</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>John Young</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Charles Duke</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Ken Mattingly</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>Apollo 16 var den enda missionen som landade i månens högland – Descartes-högländerna. John Young, som var 41 år gammal, hoppade högt i luften och saluterade flaggan. Charles Duke lämnade ett familjefoto på månens yta som fortfarande ligger där!</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 71h 2min på ytan</span>
-                                <span><i class="fas fa-car"></i> 26,7 km med månbilen</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Apollo 17 -->
-                    <div class="swiper-slide">
-                        <div class="landing-card">
-                            <div class="landing-badge badge-special">Apollo 17</div>
-                            <div class="landing-date">
-                                <i class="fas fa-calendar-alt"></i> 11 december 1972
-                            </div>
-                            <div class="landing-image-placeholder special-bg">
-                                <i class="fas fa-hand-peace fa-3x"></i>
-                                <span>Sista Besöket (hittills)</span>
-                            </div>
-                            <h3>Det Sista Steget (hittills)</h3>
-                            <div class="landing-crew">
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Gene Cernan</span>
-                                    <small>Befälhavare</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Harrison Schmitt</span>
-                                    <small>Månmodul-pilot</small>
-                                </div>
-                                <div class="crew-member">
-                                    <i class="fas fa-user-astronaut"></i>
-                                    <span>Ron Evans</span>
-                                    <small>Kommandomodul-pilot</small>
-                                </div>
-                            </div>
-                            <p>Den sista bemannade månlandningen och den enda med en forskare (geolog Harrison Schmitt). Gene Cernan var den sista människan att gå på månen. Innan han klev in i månlandaren skrev han sin dotters initialer "TDC" i månens damm. De samlade rekordmycket – 110,5 kg månstenar!</p>
-                            <div class="landing-stats">
-                                <span><i class="fas fa-clock"></i> 74h 59min på ytan</span>
-                                <span><i class="fas fa-car"></i> 35,7 km med månbilen</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="swiper-pagination"></div>
-                <div class="swiper-button-next"></div>
-                <div class="swiper-button-prev"></div>
-            </div>
-
-            <div class="apollo-summary" data-aos="fade-up">
-                <div class="summary-stat">
-                    <div class="summary-number">12</div>
-                    <div class="summary-label">Människor har gått på månen</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-number">382 kg</div>
-                    <div class="summary-label">Månstenar hämtade till Jorden</div>
-                </div>
-                <div class="summary-stat">
-                    <div class="summary-number">6</div>
-                    <div class="summary-label">Framgångsrika landningar</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== GRAVITATIONSLABB ========== -->
-    <section id="gravity" class="section gravity-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-apple-alt"></i> Gravitationslabb
-            </h2>
-            <p class="section-intro" data-aos="fade-up" data-aos-delay="100">
-                Testa gravitation i praktiken! Klicka i rutan nedan för att släppa bollar och se hur de faller
-                och studsar. Byt mellan olika planeters gravitation för att se skillnaden!
-            </p>
-
-            <div class="gravity-controls" data-aos="fade-up" data-aos-delay="200">
-                <button class="gravity-btn active" data-gravity="1.62" data-name="Månen">
-                    🌙 Månen
-                </button>
-                <button class="gravity-btn" data-gravity="3.7" data-name="Mars">
-                    🔴 Mars
-                </button>
-                <button class="gravity-btn" data-gravity="9.82" data-name="Jorden">
-                    🌍 Jorden
-                </button>
-                <button class="gravity-btn" data-gravity="24.79" data-name="Jupiter">
-                    🟤 Jupiter
-                </button>
-                <button class="gravity-btn" data-gravity="0" data-name="Rymden (0g)">
-                    🌌 Rymden (0g)
-                </button>
-            </div>
-
-            <div class="gravity-info" data-aos="fade-up">
-                <p>Nuvarande gravitation: <strong id="gravityLabel">Månen (1.62 m/s²)</strong></p>
-                <p class="gravity-hint"><i class="fas fa-hand-pointer"></i> Klicka i rutan för att släppa bollar! Dra i dem med musen!</p>
-            </div>
-
-            <div class="gravity-canvas-wrapper" data-aos="fade-up" data-aos-delay="300">
-                <canvas id="gravityCanvas"></canvas>
-            </div>
-
-            <div class="gravity-actions">
-                <button id="clearBalls" class="btn btn-secondary">
-                    <i class="fas fa-trash"></i> Rensa alla
-                </button>
-                <button id="rainBalls" class="btn btn-primary">
-                    <i class="fas fa-cloud-rain"></i> Bollregn!
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== ROLIGA FAKTA ========== -->
-    <section id="roliga-fakta" class="section funfacts-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-lightbulb"></i> Roliga Rymdfakta
-            </h2>
-
-            <div class="swiper facts-swiper" data-aos="fade-up" data-aos-delay="100">
-                <div class="swiper-wrapper">
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🌟</div>
-                            <h3>Stjärnor i Vintergatan</h3>
-                            <p>Det finns ungefär <strong>100–400 miljarder</strong> stjärnor i vår galax Vintergatan. Det är fler stjärnor än sandkorn på alla stränder på Jorden!</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🧑‍🚀</div>
-                            <h3>Längre i Rymden</h3>
-                            <p>Astronauter kan bli upp till <strong>5 cm längre</strong> i rymden! Utan gravitation sträcks ryggraden ut. De krymper tillbaka till normal längd när de kommer hem.</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">💎</div>
-                            <h3>Diamantregn</h3>
-                            <p>På Neptunus och Uranus tror forskare att det <strong>regnar diamanter</strong>! Extremt tryck pressar ihop kolmolekyler till diamanter djupt i atmosfären.</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🔇</div>
-                            <h3>Tyst i Rymden</h3>
-                            <p>I rymden kan <strong>ingen höra dig skrika</strong>! Ljud behöver luft (eller annan materia) för att färdas, och i rymdens vakuum finns inget av det.</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">☀️</div>
-                            <h3>Solens Storlek</h3>
-                            <p>Solen är så stor att <strong>1,3 miljoner jordklot</strong> skulle rymmas inuti den! Den utgör 99,86% av all massa i vårt solsystem.</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🦶</div>
-                            <h3>Fotspår på Månen</h3>
-                            <p>Fotspåren som astronauterna lämnade på månen kan finnas kvar i <strong>100 miljoner år</strong> – det finns ingen vind eller regn som kan sudda ut dem!</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🌋</div>
-                            <h3>Olympus Mons</h3>
-                            <p>Mars har det högsta berget i solsystemet – <strong>Olympus Mons</strong>. Det är 21,9 km högt, nästan <strong>tre gånger</strong> så högt som Mount Everest!</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🕰️</div>
-                            <h3>Ljusets Hastighet</h3>
-                            <p>Ljus färdas med <strong>300 000 km/s</strong>. Solljuset tar cirka 8 minuter att nå Jorden, men det tar över <strong>4 år</strong> att nå den närmaste stjärnan!</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🌊</div>
-                            <h3>Europa – Jupiters Måne</h3>
-                            <p>Under Europas isiga yta finns troligen ett <strong>enormt hav</strong> med mer vatten än alla Jordens hav tillsammans! Kanske finns det liv där?</p>
-                        </div>
-                    </div>
-                    <div class="swiper-slide">
-                        <div class="fact-card">
-                            <div class="fact-icon">🪐</div>
-                            <h3>Saturnus Flyter</h3>
-                            <p>Saturnus har så låg densitet att den <strong>skulle flyta på vatten</strong> – om det fanns en badbalja stor nog! Den är den lättaste planeten relativt sin storlek.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ========== TIDSLINJE ========== -->
-    <section class="section timeline-section">
-        <div class="container">
-            <h2 class="section-title" data-aos="fade-up">
-                <i class="fas fa-history"></i> Rymdhistoria – Viktiga Milstolpar
-            </h2>
-            <div class="timeline">
-                <div class="timeline-item" data-aos="fade-right">
-                    <div class="timeline-marker">🛰️</div>
-                    <div class="timeline-content">
-                        <h3>1957 – Sputnik 1</h3>
-                        <p>Sovjetunionen skickar upp världens första konstgjorda satellit. Rymdåldern börjar!</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-left">
-                    <div class="timeline-marker">🐕</div>
-                    <div class="timeline-content">
-                        <h3>1957 – Laika</h3>
-                        <p>Hunden Laika blir det första djuret i omloppsbana runt Jorden ombord på Sputnik 2.</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-right">
-                    <div class="timeline-marker">🧑‍🚀</div>
-                    <div class="timeline-content">
-                        <h3>1961 – Jurij Gagarin</h3>
-                        <p>Jurij Gagarin blir den första människan i rymden ombord på Vostok 1. Han sa: "Jorden är blå!"</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-left">
-                    <div class="timeline-marker">🚶</div>
-                    <div class="timeline-content">
-                        <h3>1965 – Första Rymdpromenaden</h3>
-                        <p>Aleksej Leonov blir den första människan att "gå" i rymden. Hans rymdpromenad varade 12 minuter.</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-right">
-                    <div class="timeline-marker">👣</div>
-                    <div class="timeline-content">
-                        <h3>1969 – Månlandningen</h3>
-                        <p>Neil Armstrong och Buzz Aldrin landar på månen med Apollo 11. "Ett litet steg för en människa..."</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-left">
-                    <div class="timeline-marker">🔭</div>
-                    <div class="timeline-content">
-                        <h3>1990 – Hubble-teleskopet</h3>
-                        <p>Hubble-rymdteleskopet skickas upp och ger oss de mest otroliga bilderna av universum.</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-right">
-                    <div class="timeline-marker">🤖</div>
-                    <div class="timeline-content">
-                        <h3>2012 – Curiosity på Mars</h3>
-                        <p>NASA:s rover Curiosity landar på Mars och börjar utforska den röda planetens yta.</p>
-                    </div>
-                </div>
-                <div class="timeline-item" data-aos="fade-left">
-                    <div class="timeline-marker">🚀</div>
-                    <div class="timeline-content">
-                        <h3>2021 – James Webb-teleskopet</h3>
-                        <p>Världens mest avancerade rymdteleskop skickas upp för att se ännu längre in i universum.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- ========== DETALJ-MODAL ========== -->
+    <div class="modal" id="shipModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalName">
+        <div class="modal__backdrop" data-modal-close></div>
+        <div class="modal__panel" id="modalPanel"><!-- byggs av JS --></div>
+    </div>
 
     <!-- ========== FOOTER ========== -->
     <footer class="footer">
-        <div class="footer-stars"></div>
         <div class="container">
-            <div class="footer-content">
+            <div class="footer-grid">
                 <div class="footer-brand">
-                    <h3><i class="fas fa-rocket"></i> Rymdäventyret</h3>
-                    <p>En interaktiv och barnvänlig guide till vårt fantastiska solsystem. Skapad med kärlek för rymden och lärande.</p>
+                    <a href="#hero" class="nav-logo">
+                        <span class="nav-logo__mark"><i class="fa-solid fa-satellite"></i></span>
+                        <span class="nav-logo__text">Rymdskepps<em>arkivet</em></span>
+                    </a>
+                    <p>Ett filmiskt referensarkiv över science fiction-historiens mest ikoniska rymdskepp. Byggt av kärlek till genren – inte anslutet till något filmbolag.</p>
                 </div>
-                <div class="footer-links">
-                    <h4>Snabblänkar</h4>
+                <div class="footer-col">
+                    <h4>Utforska</h4>
                     <ul>
-                        <li><a href="#solsystem">Solsystemet</a></li>
-                        <li><a href="#planeter">Planeterna</a></li>
-                        <li><a href="#manen">Månen</a></li>
-                        <li><a href="#manlandningar">Månlandningar</a></li>
-                        <li><a href="#gravity">Gravitationslabb</a></li>
+                        <li><a href="#flottan">Flottan</a></li>
+                        <li><a href="#duell">Jämför skepp</a></li>
+                        <li><a href="#skala">Storleksskala</a></li>
+                        <li><a href="#tidslinje">Tidslinje</a></li>
                     </ul>
                 </div>
-                <div class="footer-resources">
-                    <h4>Lär Dig Mer</h4>
+                <div class="footer-col">
+                    <h4>Källor</h4>
                     <ul>
-                        <li><a href="https://www.nasa.gov" target="_blank" rel="noopener">NASA <i class="fas fa-external-link-alt"></i></a></li>
-                        <li><a href="https://www.esa.int" target="_blank" rel="noopener">ESA (European Space Agency) <i class="fas fa-external-link-alt"></i></a></li>
-                        <li><a href="https://www.rymdstyrelsen.se" target="_blank" rel="noopener">Rymdstyrelsen <i class="fas fa-external-link-alt"></i></a></li>
+                        <li><a href="https://memory-alpha.fandom.com" target="_blank" rel="noopener">Memory Alpha <i class="fa-solid fa-arrow-up-right-from-square"></i></a></li>
+                        <li><a href="https://starwars.fandom.com" target="_blank" rel="noopener">Wookieepedia <i class="fa-solid fa-arrow-up-right-from-square"></i></a></li>
+                        <li><a href="https://expanse.fandom.com" target="_blank" rel="noopener">The Expanse Wiki <i class="fa-solid fa-arrow-up-right-from-square"></i></a></li>
+                        <li><a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia <i class="fa-solid fa-arrow-up-right-from-square"></i></a></li>
                     </ul>
                 </div>
-                <div class="footer-social">
-                    <h4>Följ Rymden</h4>
+                <div class="footer-col">
+                    <h4>Följ</h4>
                     <div class="social-links">
-                        <a href="https://twitter.com/NASA" target="_blank" rel="noopener" class="social-link" title="NASA på X/Twitter">
-                            <i class="fab fa-x-twitter"></i>
-                        </a>
-                        <a href="https://www.instagram.com/nasa/" target="_blank" rel="noopener" class="social-link" title="NASA på Instagram">
-                            <i class="fab fa-instagram"></i>
-                        </a>
-                        <a href="https://www.youtube.com/nasa" target="_blank" rel="noopener" class="social-link" title="NASA på YouTube">
-                            <i class="fab fa-youtube"></i>
-                        </a>
-                        <a href="https://www.facebook.com/NASA" target="_blank" rel="noopener" class="social-link" title="NASA på Facebook">
-                            <i class="fab fa-facebook-f"></i>
-                        </a>
-                        <a href="https://www.tiktok.com/@nasa" target="_blank" rel="noopener" class="social-link" title="NASA på TikTok">
-                            <i class="fab fa-tiktok"></i>
-                        </a>
+                        <a href="#" class="social-link" aria-label="X"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" class="social-link" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="social-link" aria-label="Letterboxd"><i class="fa-solid fa-film"></i></a>
+                        <a href="#" class="social-link" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Rymdäventyret. Skapad för att inspirera unga rymdutforskare.</p>
-                <p class="footer-quote">"Somewhere, something incredible is waiting to be known." – Carl Sagan</p>
+                <p>&copy; 2026 Rymdskeppsarkivet. Alla skepp, namn och varumärken tillhör respektive rättighetsinnehavare.</p>
+                <p class="footer-quote">"Jag har sett saker ni människor inte skulle tro." – Roy Batty, <em>Blade Runner</em></p>
             </div>
         </div>
     </footer>
 
-    <!-- ========== TILLBAKA TILL TOPPEN ========== -->
     <button id="backToTop" class="back-to-top" aria-label="Tillbaka till toppen">
-        <i class="fas fa-chevron-up"></i>
+        <i class="fa-solid fa-chevron-up"></i>
     </button>
 
-    <!-- ========== SKJUTSTJÄRNA (Easter Egg) ========== -->
-    <div id="shootingStar" class="shooting-star"></div>
-
     <!-- ========== SCRIPTS ========== -->
-    <!-- Matter.js för fysikmotor -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    <!-- Swiper -->
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <!-- AOS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
-    <!-- Custom Scripts -->
-    <script src="js/gravity.js"></script>
+    <script src="js/ships.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
