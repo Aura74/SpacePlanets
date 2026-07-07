@@ -7,9 +7,13 @@
    - crew:   numeriskt värde för stapeldiagram
    - crewText: visningstext
    - speedRating / weaponRating: 0–100 redaktionella bedömningar
+   - maker:  tillverkare (i fiktionen)
+   - weapons: bestyckning (lista)
+   - scenes: "känd för"-scener (lista, redaktionell)
+   - sources: källänkar [{label, url}]
    - image:  riktig bild (Wikimedia/fan-wiki). Laddas som lager ovanpå
              blueprint-siluetten; misslyckas den visas siluetten istället.
-   - svg:    siluett (viewBox 0 0 100 X + path) för blueprint/skala
+   - svg:    siluett (viewBox + path) för blueprint/skala
    ============================================ */
 
 const SILHOUETTES = {
@@ -35,6 +39,13 @@ const SHIPS = [
         length: 34.75, crew: 4, crewText: '2–4 + passagerare',
         ftl: 'Hyperdrift, klass 0,5', speedRating: 90, weaponRating: 58,
         accent: '#f2c14e', sil: 'falcon',
+        maker: 'Corellian Engineering Corporation',
+        weapons: ['2× CEC AG-2G fyrlingslaserkanoner', 'Dold BlasTech Ax-108 "Ground Buzzer"', '2× ST2 concussion-robotavfyrare'],
+        scenes: ['Kesselloppet på under tolv parsec', 'Flykten genom asteroidfältet i The Empire Strikes Back', 'Anflygningen mot andra Dödsstjärnans kärna i Return of the Jedi'],
+        sources: [
+            { label: 'Wookieepedia', url: 'https://starwars.fandom.com/wiki/Millennium_Falcon' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Millennium_Falcon' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/8/8d/A_screenshot_from_Star_Wars_Episode_IV_A_New_Hope_depicting_the_Millennium_Falcon.jpg',
         desc: 'Han Solos modifierade fraktare – "the ship that made the Kessel Run in less than twelve parsecs". Under det skranliga skalet döljer sig en av galaxens snabbaste farkoster, ständigt på gränsen till haveri men aldrig besegrad.',
         quote: 'She may not look like much, but she\'s got it where it counts.'
@@ -46,6 +57,13 @@ const SHIPS = [
         length: 12.5, crew: 1, crewText: '1 pilot + astromech',
         ftl: 'Hyperdrift, klass 1', speedRating: 82, weaponRating: 70,
         accent: '#ff7a45', sil: 'xwing',
+        maker: 'Incom Corporation',
+        weapons: ['4× Taim & Bak KX9 laserkanoner', '2× Krupx MG7 protontorpedtuber (6 torpeder)'],
+        scenes: ['Torpeden i ventilationsschaktet – Dödsstjärnans undergång', 'Slaget vid Yavin', 'Landningen i Dagobahs träsk i The Empire Strikes Back'],
+        sources: [
+            { label: 'Wookieepedia', url: 'https://starwars.fandom.com/wiki/T-65B_X-wing_starfighter' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/X-wing_fighter' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/7/7b/X-wing.jpg',
         desc: 'Rebellalliansens arbetshäst, döpt efter sina S-formade vingar som öppnas i attackläge. Det var en X-wing som sköt den avgörande protontorpeden ner i Dödsstjärnans ventilationsschakt.',
         quote: 'Lås S-vingarna i attackposition.'
@@ -57,6 +75,13 @@ const SHIPS = [
         length: 1600, crew: 37000, crewText: '~37 000 + 9 700 trupp',
         ftl: 'Hyperdrift, klass 2', speedRating: 55, weaponRating: 96,
         accent: '#9fb3c8', sil: 'wedge',
+        maker: 'Kuat Drive Yards',
+        weapons: ['60 Taim & Bak XX-9 turbolasrar', '60 Borstel NK-7 jonkanoner', '10 traktorstråleprojektorer', '72 TIE-jaktplan i hangaren'],
+        scenes: ['Öppningsbilden i Star Wars (1977) – skeppet som aldrig tar slut', 'Jakten på Millennium Falcon genom asteroidfältet', 'Vraket i Jakkus öken i The Force Awakens'],
+        sources: [
+            { label: 'Wookieepedia', url: 'https://starwars.fandom.com/wiki/Imperial_I-class_Star_Destroyer' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Star_Destroyer' }
+        ],
         image: 'https://static.wikia.nocookie.net/starwars/images/9/9d/ImperialStarDestroyer-RFGE.png/revision/latest?cb=20240803160040',
         desc: 'Den kilformade siluetten som glider in över skärmen i öppningsscenen och definierade kejsardömets makt. Över en och en halv kilometer lång, bestyckad med tunga turbolaser och full av TIE-jaktplan.',
         quote: 'En symbol för kejsardömets järnhand över galaxen.'
@@ -68,6 +93,13 @@ const SHIPS = [
         length: 642.5, crew: 1014, crewText: '~1 014 (inkl. familjer)',
         ftl: 'Warpdrift, max warp 9,6', speedRating: 80, weaponRating: 74,
         accent: '#5b8cff', sil: 'enterprise',
+        maker: 'Utopia Planitia Fleet Yards, Mars',
+        weapons: ['12 fasersystem typ X', '3 fotontorpedtuber (~275 torpeder)', 'Deflektorsköldar + separerbar tefatssektion'],
+        scenes: ['Mötet med Q i pilotavsnittet Encounter at Farpoint', 'The Best of Both Worlds – slaget mot Borg', 'Kraschlandningen på Veridian III i Generations'],
+        sources: [
+            { label: 'Memory Alpha', url: 'https://memory-alpha.fandom.com/wiki/USS_Enterprise_(NCC-1701-D)' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/USS_Enterprise_(NCC-1701-D)' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/5/58/Enterprise_Forward.jpg',
         desc: 'Federationens flytande stad under kapten Picard. Ett utforskningsskepp där hela familjer levde ombord, byggt för diplomati lika mycket som försvar – med ett separerbart stridsavsnitt vid fara.',
         quote: 'Att gå dit ingen människa har gått förut.'
@@ -79,6 +111,12 @@ const SHIPS = [
         length: 344, crew: 150, crewText: '~150',
         ftl: 'Warpdrift, max warp 9,975', speedRating: 84, weaponRating: 68,
         accent: '#7aa5ff', sil: 'voyager',
+        maker: 'Utopia Planitia Fleet Yards, Mars',
+        weapons: ['13 fasersystem typ VIII', 'Foton- och senare transfasiska torpeder', 'Ablativt pansar (framtidsteknik i Endgame)'],
+        scenes: ['Caretaker – slungad 70 000 ljusår i pilotavsnittet', 'Year of Hell – skeppet i spillror men aldrig besegrat', 'Hemkomsten genom Borgs transwarpnav i Endgame'],
+        sources: [
+            { label: 'Memory Alpha', url: 'https://memory-alpha.fandom.com/wiki/USS_Voyager_(NCC-74656)' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/7/70/Feature-voyager-starboard2-bonchune-large.jpg',
         desc: 'Slungad 70 000 ljusår hemifrån till Deltakvadranten. Ett mindre, snabbare skepp med rörliga warpnaceller och bio-neurala kretsar, tvunget att klara sig på egen hand under en decennielång resa hem.',
         quote: 'Det finns kaffe i den där nebulosan.'
@@ -90,6 +128,13 @@ const SHIPS = [
         length: 3000, crew: 64000, crewText: 'Tiotusentals drönare',
         ftl: 'Transwarp', speedRating: 78, weaponRating: 99,
         accent: '#67e8b0', sil: 'cube',
+        maker: 'Borgkollektivet (självreplikerande)',
+        weapons: ['Skärstråle och traktorstråle', 'Adaptiva sköldar som lär sig av varje träff', 'Assimileringstuber och drönarbordning'],
+        scenes: ['Q Who – kollektivets första möte med Enterprise', 'Slaget vid Wolf 359 – 39 skepp förlorade', 'Slaget vid Sektor 001 i First Contact'],
+        sources: [
+            { label: 'Memory Alpha', url: 'https://memory-alpha.fandom.com/wiki/Borg_cube' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Borg' }
+        ],
         image: 'https://static.wikia.nocookie.net/memoryalpha/images/f/fd/Borg_cube%2C_2384.jpg/revision/latest?cb=20221204213450&path-prefix=en',
         desc: 'Ingen brygga, ingen kapten, ingen rädsla. En tre kilometer stor kub utan front eller akter, med ett kollektivt medvetande. Skador läker av sig själva. "Motstånd är meningslöst."',
         quote: 'Vi är Borg. Motstånd är meningslöst.'
@@ -101,6 +146,13 @@ const SHIPS = [
         length: 243, crew: 7, crewText: '7',
         ftl: 'Hyperdrift (cryo-sömn)', speedRating: 40, weaponRating: 8,
         accent: '#e8a13a', sil: 'nostromo',
+        maker: 'Lockmart – CM-88B Bison-klass',
+        weapons: ['Obeväpnad – civil malmbogserare'],
+        scenes: ['Omdirigeringen till nödsignalen från LV-426', 'Chestburstern vid middagsbordet', 'Ripleys slutliga självförstöringssekvens'],
+        sources: [
+            { label: 'Xenopedia', url: 'https://avp.fandom.com/wiki/USCSS_Nostromo' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Alien_(film)' }
+        ],
         image: 'https://static.wikia.nocookie.net/avp/images/c/c5/Img4.jpg/revision/latest?cb=20131021025529',
         desc: 'En sliten industriell bogserare som drar en enorm raffinaderilast genom rymden. Inget krigsskepp – bara sju arbetare, en katt och en organism ingen av dem borde ha släppt ombord.',
         quote: 'In space, no one can hear you scream.'
@@ -112,6 +164,13 @@ const SHIPS = [
         length: 82, crew: 9, crewText: '9',
         ftl: 'Ingen FTL (sublight)', speedRating: 52, weaponRating: 18,
         accent: '#d98e5a', sil: 'serenity',
+        maker: 'Allied Spacecraft Corporation – Firefly 03-K64',
+        weapons: ['Obeväpnad – förlitar sig på fart och list'],
+        scenes: ['Crazy Ivan-manövern i pilotavsnittet', 'Flykten genom Reaver-flottan i Serenity (2005)', 'Wash: "I am a leaf on the wind"'],
+        sources: [
+            { label: 'Firefly Wiki', url: 'https://firefly.fandom.com/wiki/Serenity_(ship)' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Serenity_(Firefly_vessel)' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/1/11/Serenityship.jpg',
         desc: 'Ett hem lika mycket som ett skepp. Den obeväpnade Firefly-fraktaren tar kapten Mal och hans brokiga besättning runt randen av civilisationen – glödande akter, ingen radarsignatur värd namnet, och en orubblig vägran att ge upp.',
         quote: 'I aim to misbehave.'
@@ -123,6 +182,12 @@ const SHIPS = [
         length: 140, crew: 5, crewText: '5 (+ HAL 9000)',
         ftl: 'Ingen FTL (kärnpuls)', speedRating: 22, weaponRating: 4,
         accent: '#cfd6e0', sil: 'discovery',
+        maker: 'Byggd i jordomloppsbana för Jupiter-uppdraget',
+        weapons: ['Obeväpnad – vetenskapsfartyg'],
+        scenes: ['HAL läser astronauternas läppar genom kapselfönstret', '"Open the pod bay doors, HAL"', 'Bowmans nedkoppling av HAL:s medvetande'],
+        sources: [
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Discovery_One' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/commons/f/f5/Discovery_One_from_trailer_of_2001_A_Space_Odyssey_%281968%29.png',
         desc: 'Kubricks ryggradsformade skepp med roterande boendekula. Vetenskapligt trovärdigt långt före sin tid – tyst, sterilt och styrt av den mjukröstade AI:n HAL 9000, vars haveri blev filmhistoriens mest oroande.',
         quote: 'I\'m sorry, Dave. I\'m afraid I can\'t do that.'
@@ -134,6 +199,13 @@ const SHIPS = [
         length: 1438, crew: 2500, crewText: '~2 500 + flygkår',
         ftl: 'FTL-hopp', speedRating: 60, weaponRating: 88,
         accent: '#8fa3b3', sil: 'galactica',
+        maker: 'Kolonialflottans varv – Jupiter-klass',
+        weapons: ['24 dubbelpipiga kinetiska huvudbatterier', '~500 luftvärnsbatterier', 'Två flygdäck med ~80 Viper-jaktplan'],
+        scenes: ['Cylonernas kärnvapenattack i miniserien', '33 – FTL-hopp var 33:e minut, utan sömn', 'Det sista döende språnget i seriefinalen'],
+        sources: [
+            { label: 'Battlestar Wiki', url: 'https://galactica.fandom.com/wiki/Battlestar_Galactica' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Battlestar_Galactica_(ship)' }
+        ],
         image: 'https://static.wikia.nocookie.net/galactica/images/7/76/Jupiter-class_Transparent.png/revision/latest?cb=20241020063545',
         desc: 'Ett åldrande slagskepp på väg att bli museum – tills cylonerna utplånade människans tolv kolonier. Galactica blir den sista beväpnade eskorten för mänsklighetens spillra, byggd robust nog att överleva när högteknologin svek.',
         quote: 'So say we all.'
@@ -145,6 +217,13 @@ const SHIPS = [
         length: 46, crew: 4, crewText: '4 kärnbesättning',
         ftl: 'Ingen FTL (Epstein-drift)', speedRating: 70, weaponRating: 64,
         accent: '#46c79a', sil: 'rocinante',
+        maker: 'Bull Moose Dock, Mars (ex-MCRN Tachi)',
+        weapons: ['2× torpedtuber med plasma-/kärnstridsspetsar', '6× punktförsvarskanoner (PDC)', 'Kölmonterad railgun (eftermonterad)'],
+        scenes: ['Flykten från Donnager – besättningen finner varandra', 'Bordningen av Thoth-stationen', 'Passagen genom Ringen till det okända'],
+        sources: [
+            { label: 'Expanse Wiki', url: 'https://expanse.fandom.com/wiki/Rocinante_(TV)' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/The_Expanse_(TV_series)' }
+        ],
         image: 'https://static.wikia.nocookie.net/expanse/images/5/54/RociArtS4.png/revision/latest?cb=20220113235011',
         desc: 'Den hårdast vetenskapligt grundade farkosten på listan. En kapad mars-korvett driven av Epstein-fusion – ingen warp, ingen ljudeffekt i vakuum, bara g-krafter, reaktionsmassa och en besättning som blir en familj.',
         quote: 'Vi tar hand om vår egen.'
@@ -156,6 +235,13 @@ const SHIPS = [
         length: 216, crew: 30, crewText: '~30+',
         ftl: 'Massreduktion-kärna + reläer', speedRating: 86, weaponRating: 72,
         accent: '#5ad1e6', sil: 'normandy',
+        maker: 'Cerberus, efter Alliansens/turianernas SR-1-design',
+        weapons: ['Thanix-kanon i flytande metall', 'GARDIAN-laserförsvar', 'Javelin-torpeder + IES-smygsystem'],
+        scenes: ['Avtäckningen hos Cerberus i Mass Effect 2', 'Självmordsuppdraget genom Omega 4-reläet', 'Flykten från jorden i Mass Effect 3:s öppning'],
+        sources: [
+            { label: 'Mass Effect Wiki', url: 'https://masseffect.fandom.com/wiki/Normandy_SR-2' },
+            { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Mass_Effect_2' }
+        ],
         image: 'https://upload.wikimedia.org/wikipedia/en/a/a9/Mass_Effect_Normandy_SR-1.png',
         desc: 'Commander Shepards fregatt med ett element-zero-drivverk som låter skeppet glida fram osynligt för värmesökare. En av spelvärldens mest ikoniska farkoster, hemmabas mellan uppdrag att rädda galaxen.',
         quote: 'Normandy redo att lyfta.'
@@ -169,6 +255,27 @@ const FRANCHISE_LABEL = {
     modern: 'Modern'
 };
 
+/* Redaktionella topplistor – "Arkivets val" */
+const ARCHIVE_PICKS = [
+    {
+        ship: 'millennium-falcon', label: 'Snabbast i arkivet',
+        blurb: 'Hyperdrift klass 0,5 och ett skrov fullt av smugglartrick. Ingen farkost i arkivet tar sig fortare från punkt A till punkt B – eller ur större knipor.'
+    },
+    {
+        ship: 'borg-cube', label: 'Störst',
+        blurb: 'Tre kilometer kollektiv geometri utan för och akter. Kuben behöver ingen aerodynamik – den är ett argument i sig.'
+    },
+    {
+        ship: 'star-destroyer', label: 'Tyngst bestyckad',
+        blurb: 'Sextio turbolasrar, sextio jonkanoner och en hel jaktflottilj i buken. Kejsardömets kilformade visitkort.'
+    },
+    {
+        ship: 'rocinante', label: 'Mest verklighetstrogen',
+        blurb: 'Ingen warp, inget ljud i vakuum. Bara Epstein-fusion, reaktionsmassa och g-krafter som pressar besättningen i sätena.'
+    }
+];
+
 window.SHIPS = SHIPS;
 window.SILHOUETTES = SILHOUETTES;
 window.FRANCHISE_LABEL = FRANCHISE_LABEL;
+window.ARCHIVE_PICKS = ARCHIVE_PICKS;

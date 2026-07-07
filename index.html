@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rymdskeppsarkivet – Jämför filmens ikoniska rymdskepp</title>
     <meta name="description" content="En filmisk jämförelse av science fiction-historiens mest ikoniska rymdskepp – från Millennium Falcon till Rocinante. Ställ skepp mot skepp, jämför storlek, besättning och bestyckning.">
+    <meta name="theme-color" content="#070910" id="metaTheme">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23070910'/%3E%3Cpath d='M32 9 47 46l-15-8-15 8z' fill='%235ad1e6'/%3E%3C/svg%3E">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/icons/icon-192.png">
 
     <!-- Förhindra fel tema-blink: sätt tema + prestandaläge före paint -->
     <script>
@@ -39,9 +43,6 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <!-- Swiper CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-
     <!-- AOS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
 
@@ -66,10 +67,22 @@
             </a>
 
             <ul class="nav-menu" id="navMenu">
+                <li class="nav-menu__close">
+                    <button class="nav-close" id="navClose" aria-label="Stäng meny"><i class="fa-solid fa-xmark"></i></button>
+                </li>
                 <li><a href="#flottan" class="nav-link">Flottan</a></li>
+                <li><a href="#urval" class="nav-link">Urval</a></li>
                 <li><a href="#duell" class="nav-link">Jämför</a></li>
                 <li><a href="#skala" class="nav-link">Storleksskala</a></li>
                 <li><a href="#tidslinje" class="nav-link">Tidslinje</a></li>
+                <li class="nav-menu__perf">
+                    <span class="nav-menu__perf-label">Effekter</span>
+                    <div class="perf-switch perf-switch--menu" role="group" aria-label="Prestandaläge">
+                        <button class="perf-btn" data-perf-set="lite" title="Lätt – för tröga datorer">Lätt</button>
+                        <button class="perf-btn" data-perf-set="standard" title="Standard">Standard</button>
+                        <button class="perf-btn" data-perf-set="max" title="Alla effekter">Max</button>
+                    </div>
+                </li>
             </ul>
 
             <div class="nav-controls">
@@ -130,6 +143,11 @@
                     specifikation.
                 </p>
 
+                <div class="fleet-search" data-aos="fade-up" data-aos-delay="100">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input type="search" id="fleetSearch" placeholder="Sök skepp, klass eller universum…" aria-label="Sök i flottan" autocomplete="off">
+                </div>
+
                 <div class="filter-bar" data-aos="fade-up" data-aos-delay="120" id="filterBar" role="group" aria-label="Filtrera flottan">
                     <button class="filter-chip is-active" data-filter="all">Alla</button>
                     <button class="filter-chip" data-filter="starwars">Star Wars</button>
@@ -139,11 +157,24 @@
                 </div>
 
                 <div class="fleet-grid" id="fleetGrid"><!-- byggs av JS --></div>
+                <p class="fleet-empty" id="fleetEmpty" hidden>Inga skepp matchar din sökning.</p>
+            </div>
+        </section>
+
+        <!-- ========== ARKIVETS VAL ========== -->
+        <section id="urval" class="section section--alt">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Redaktionen</p>
+                <h2 class="section-title" data-aos="fade-up">Arkivets val</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    Fyra nedslag ur flottan – utvalda och motiverade av redaktionen.
+                </p>
+                <div class="picks-grid" id="picksGrid"><!-- byggs av JS --></div>
             </div>
         </section>
 
         <!-- ========== DUELL (HEAD-TO-HEAD) ========== -->
-        <section id="duell" class="section section--alt">
+        <section id="duell" class="section">
             <div class="container">
                 <p class="eyebrow eyebrow--center" data-aos="fade-up">Skepp mot skepp</p>
                 <h2 class="section-title" data-aos="fade-up">Jämför två skepp</h2>
@@ -169,12 +200,15 @@
 
                     <div class="duel-bars" id="duelBars"><!-- byggs av JS --></div>
                     <p class="duel-verdict" id="duelVerdict" aria-live="polite"></p>
+                    <div class="duel-share">
+                        <button class="btn btn-ghost" id="duelShare"><i class="fa-solid fa-link"></i> Kopiera länk till duellen</button>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- ========== STORLEKSSKALA ========== -->
-        <section id="skala" class="section">
+        <section id="skala" class="section section--alt">
             <div class="container">
                 <p class="eyebrow eyebrow--center" data-aos="fade-up">Perspektiv</p>
                 <h2 class="section-title" data-aos="fade-up">Storleksskala</h2>
@@ -183,6 +217,18 @@
                     skala (kvadratrot för läsbarhet) – verklig längd visas till höger.
                 </p>
                 <div class="scale-chart" id="scaleChart" data-aos="fade-up" data-aos-delay="120"><!-- byggs av JS --></div>
+            </div>
+        </section>
+
+        <!-- ========== CITAT ========== -->
+        <section id="citat" class="section">
+            <div class="container">
+                <p class="eyebrow eyebrow--center" data-aos="fade-up">Repliker</p>
+                <h2 class="section-title" data-aos="fade-up">Ur genrens manus</h2>
+                <p class="section-intro" data-aos="fade-up" data-aos-delay="80">
+                    Tolv repliker som följt skeppen ut ur biograferna. Svep i sidled.
+                </p>
+                <div class="quote-wall" id="quoteWall" data-aos="fade-up" data-aos-delay="120"><!-- byggs av JS --></div>
             </div>
         </section>
 
@@ -256,9 +302,9 @@
     </button>
 
     <!-- ========== SCRIPTS ========== -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script src="js/ships.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/chat.js"></script>
 </body>
 </html>

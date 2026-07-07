@@ -22,7 +22,23 @@
 
     function blueprintHTML(ship) {
         const sil = SILHOUETTES[ship.sil];
-        return `<div class="ship-visual__blueprint"><svg viewBox="${sil.vb}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="${sil.d}"/></svg></div>`;
+        // pathLength=1 gör att rit-animationen (Max-läget) kan använda dasharray:1 oavsett verklig kurvlängd
+        return `<div class="ship-visual__blueprint"><svg viewBox="${sil.vb}" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="${sil.d}" pathLength="1"/></svg></div>`;
+    }
+
+    // ---------- Toast ----------
+    let toastTimer = null;
+    function toast(msg) {
+        let t = $('#toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'toast'; t.className = 'toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
     }
     function imageHTML(ship) {
         // Riktig bild läggs ovanpå blueprinten. Visas bara om den laddas (annars syns siluetten).
@@ -50,11 +66,17 @@
     // ==========================================
     function initTheme() {
         const btn = $('#themeToggle');
+        const meta = $('#metaTheme');
+        const syncMeta = () => {
+            if (meta) meta.setAttribute('content', root.getAttribute('data-theme') === 'light' ? '#eef1f6' : '#070910');
+        };
+        syncMeta();
         if (!btn) return;
         btn.addEventListener('click', () => {
             const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             root.setAttribute('data-theme', next);
             try { localStorage.setItem('theme', next); } catch (e) {}
+            syncMeta();
         });
     }
 
@@ -114,7 +136,8 @@
                 size: Math.random() * 1.8 + 0.2,
                 opacity: Math.random(),
                 tw: 0.004 + Math.random() * 0.014,
-                dir: Math.random() > 0.5 ? 1 : -1
+                dir: Math.random() > 0.5 ? 1 : -1,
+                depth: 0.35 + Math.random() * 0.65 // parallaxlager i Max-läget (nära=1, långt=0.35)
             }));
         }
         function makeShooting() {
@@ -133,14 +156,25 @@
 
         function frame() {
             if (!running) return;
+            // hero utom synhåll → hoppa över ritandet helt (sparar GPU)
+            const sy = window.scrollY;
+            if (sy > height * 1.15) { raf = requestAnimationFrame(frame); return; }
             ctx.clearRect(0, 0, width, height);
+            // ljust tema: mörka prickar (ljusa stjärnor syns inte mot ljus bakgrund)
+            const light = root.getAttribute('data-theme') === 'light';
+            // Max-läget: stjärnorna glider olika fort vid scroll → djupkänsla i 3 lager
+            const par = root.getAttribute('data-perf') === 'max' ? sy * 0.3 : 0;
             for (const s of stars) {
                 s.opacity += s.tw * s.dir;
                 if (s.opacity >= 1) { s.opacity = 1; s.dir = -1; }
                 else if (s.opacity <= 0.1) { s.opacity = 0.1; s.dir = 1; }
+                let yy = s.y + par * (1 - s.depth);
+                if (par) { yy %= height; if (yy < 0) yy += height; }
                 ctx.beginPath();
-                ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(180, 210, 245, ${s.opacity * 0.9})`;
+                ctx.arc(s.x, yy, s.size, 0, Math.PI * 2);
+                ctx.fillStyle = light
+                    ? `rgba(45, 80, 120, ${s.opacity * 0.45})`
+                    : `rgba(180, 210, 245, ${s.opacity * 0.9})`;
                 ctx.fill();
             }
             shooting = shooting.filter(ss => {
@@ -151,8 +185,8 @@
                 const tx = ss.x - Math.cos(ss.angle) * ss.len;
                 const ty = ss.y - Math.sin(ss.angle) * ss.len;
                 const g = ctx.createLinearGradient(tx, ty, ss.x, ss.y);
-                g.addColorStop(0, 'rgba(90,209,230,0)');
-                g.addColorStop(1, `rgba(140,225,245,${ss.opacity})`);
+                g.addColorStop(0, light ? 'rgba(15,90,120,0)' : 'rgba(90,209,230,0)');
+                g.addColorStop(1, light ? `rgba(15,90,120,${ss.opacity * 0.6})` : `rgba(140,225,245,${ss.opacity})`);
                 ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(ss.x, ss.y);
                 ctx.strokeStyle = g; ctx.lineWidth = 2; ctx.stroke();
                 return ss.x < width + 120 && ss.y < height + 120;
@@ -177,23 +211,34 @@
         const navbar = $('#navbar');
         const toggle = $('#navToggle');
         const menu = $('#navMenu');
+        const closeBtn = $('#navClose');
         const links = $$('.nav-link');
 
         const onScroll = () => navbar.classList.toggle('scrolled', window.scrollY > 40);
         window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
-        if (toggle) {
-            toggle.addEventListener('click', () => {
-                const open = menu.classList.toggle('active');
-                toggle.classList.toggle('active', open);
-                toggle.setAttribute('aria-expanded', String(open));
-            });
+        function openMenu() {
+            menu.classList.add('active');
+            toggle.classList.add('active');
+            toggle.setAttribute('aria-expanded', 'true');
+            document.body.classList.add('menu-open');
         }
-        links.forEach(l => l.addEventListener('click', () => {
+        function closeMenu() {
             menu.classList.remove('active');
             toggle.classList.remove('active');
             toggle.setAttribute('aria-expanded', 'false');
-        }));
+            document.body.classList.remove('menu-open');
+        }
+        if (toggle) toggle.addEventListener('click', () => menu.classList.contains('active') ? closeMenu() : openMenu());
+        if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+        links.forEach(l => l.addEventListener('click', closeMenu));
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && menu.classList.contains('active')) closeMenu(); });
+        // klick på scrimmen (utanför panelen) stänger
+        document.addEventListener('click', e => {
+            if (!document.body.classList.contains('menu-open')) return;
+            if (e.target.closest('#navMenu') || e.target.closest('#navToggle')) return;
+            closeMenu();
+        });
 
         // Scroll-spy
         const sections = $$('section[id], header[id]');
@@ -261,6 +306,51 @@
         </article>`;
     }
 
+    let fleetFilter = 'all';
+    let fleetQuery = '';
+
+    function applyFleet() {
+        const grid = $('#fleetGrid');
+        const q = fleetQuery.trim().toLowerCase();
+        let visible = 0;
+        $$('.ship-card', grid).forEach(card => {
+            const ship = shipById(card.dataset.id);
+            const matchesFilter = fleetFilter === 'all' || ship.franchiseId === fleetFilter;
+            const hay = `${ship.name} ${ship.short} ${ship.klass} ${ship.franchise} ${FRANCHISE_LABEL[ship.franchiseId]}`.toLowerCase();
+            const matchesQuery = !q || hay.includes(q);
+            const show = matchesFilter && matchesQuery;
+            card.classList.toggle('is-hidden', !show);
+            if (show) visible++;
+        });
+        const empty = $('#fleetEmpty');
+        if (empty) empty.hidden = visible !== 0;
+    }
+
+    // FLIP: mät före/efter och animera korten till sina nya platser (Web Animations API, inga lib)
+    function flipFleet(mutate) {
+        const grid = $('#fleetGrid');
+        if (root.getAttribute('data-perf') === 'lite') { mutate(); return; }
+        const cards = $$('.ship-card', grid);
+        const first = new Map();
+        cards.forEach(c => { if (!c.classList.contains('is-hidden')) first.set(c, c.getBoundingClientRect()); });
+        mutate();
+        cards.forEach(c => {
+            if (c.classList.contains('is-hidden')) return;
+            const last = c.getBoundingClientRect();
+            const f = first.get(c);
+            if (f) {
+                const dx = f.left - last.left, dy = f.top - last.top;
+                if (dx || dy) c.animate(
+                    [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+                    { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+            } else {
+                c.animate(
+                    [{ opacity: 0, transform: 'translateY(10px)' }, { opacity: 1, transform: 'none' }],
+                    { duration: 380, easing: 'ease-out' });
+            }
+        });
+    }
+
     function initFleet() {
         const grid = $('#fleetGrid');
         if (!grid) return;
@@ -278,35 +368,41 @@
             }
         });
 
-        // Filter
+        // Filter-chips med FLIP
         $$('.filter-chip').forEach(chip => {
             chip.addEventListener('click', () => {
                 $$('.filter-chip').forEach(c => c.classList.remove('is-active'));
                 chip.classList.add('is-active');
-                const f = chip.dataset.filter;
-                $$('.ship-card', grid).forEach(card => {
-                    card.classList.toggle('is-hidden', f !== 'all' && card.dataset.franchise !== f);
-                });
+                flipFleet(() => { fleetFilter = chip.dataset.filter; applyFleet(); });
             });
         });
+
+        // Sökfält (debounce + FLIP)
+        const search = $('#fleetSearch');
+        if (search) {
+            let deb;
+            search.addEventListener('input', () => {
+                clearTimeout(deb);
+                deb = setTimeout(() => {
+                    flipFleet(() => { fleetQuery = search.value; applyFleet(); });
+                }, 140);
+            });
+        }
     }
 
     // ==========================================
     // 9. DETALJ-MODAL
     // ==========================================
     let lastFocus = null;
+    let currentShipId = null;
 
-    function openModal(id) {
-        const ship = shipById(id);
-        if (!ship) return;
-        const modal = $('#shipModal');
-        const panel = $('#modalPanel');
-        lastFocus = document.activeElement;
-
-        panel.style.setProperty('--ship-accent', ship.accent);
-        panel.innerHTML = `
+    function modalHTML(ship) {
+        const idx = SHIPS.findIndex(s => s.id === ship.id);
+        const prev = SHIPS[(idx - 1 + SHIPS.length) % SHIPS.length];
+        const next = SHIPS[(idx + 1) % SHIPS.length];
+        return `
             <button class="modal-close" data-modal-close aria-label="Stäng"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-hero">
+            <div class="modal-hero in-view">
                 ${blueprintHTML(ship)}
                 ${imageHTML(ship)}
             </div>
@@ -320,15 +416,64 @@
                     <div class="modal-spec"><div class="modal-spec__lbl">Längd</div><div class="modal-spec__val">${fmtLength(ship.length)}</div></div>
                     <div class="modal-spec"><div class="modal-spec__lbl">Besättning</div><div class="modal-spec__val">${ship.crewText}</div></div>
                     <div class="modal-spec"><div class="modal-spec__lbl">Drivteknik</div><div class="modal-spec__val">${ship.ftl}</div></div>
-                    <div class="modal-spec"><div class="modal-spec__lbl">Roll</div><div class="modal-spec__val">${ship.role}</div></div>
+                    <div class="modal-spec"><div class="modal-spec__lbl">Tillverkare</div><div class="modal-spec__val">${ship.maker}</div></div>
                     <div class="modal-spec"><div class="modal-spec__lbl">Hastighetsbetyg</div><div class="modal-spec__val">${ship.speedRating}/100</div></div>
                     <div class="modal-spec"><div class="modal-spec__lbl">Eldkraftsbetyg</div><div class="modal-spec__val">${ship.weaponRating}/100</div></div>
                 </div>
+                <div class="modal-block">
+                    <h3>Bestyckning</h3>
+                    <ul class="modal-weapons">${ship.weapons.map(w => `<li>${w}</li>`).join('')}</ul>
+                </div>
+                <div class="modal-block">
+                    <h3>Känd för</h3>
+                    <ol class="modal-scenes">${ship.scenes.map(s => `<li>${s}</li>`).join('')}</ol>
+                </div>
+                <div class="modal-sources">
+                    <span>Källor:</span>
+                    ${ship.sources.map(s => `<a href="${s.url}" target="_blank" rel="noopener">${s.label} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`).join('')}
+                </div>
+                <div class="modal-pager">
+                    <button data-modal-prev><span class="mp-dir">‹ Föregående</span><span class="mp-name">${prev.short}</span></button>
+                    <button data-modal-next><span class="mp-dir">Nästa ›</span><span class="mp-name">${next.short}</span></button>
+                </div>
             </div>`;
+    }
+
+    function renderModalPanel(id) {
+        const ship = shipById(id);
+        if (!ship) return;
+        const panel = $('#modalPanel');
+        panel.style.setProperty('--ship-accent', ship.accent);
+        panel.innerHTML = modalHTML(ship);
+        panel.scrollTop = 0;
+        currentShipId = id;
+    }
+
+    function openModal(id) {
+        const modal = $('#shipModal');
+        lastFocus = document.activeElement;
+        renderModalPanel(id);
         modal.classList.add('is-open');
         modal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
-        $('.modal-close', panel).focus();
+        $('.modal-close', $('#modalPanel')).focus();
+    }
+
+    // Bläddra till nästa/förra skepp – med View Transition i Max-läget (Chrome), annars direkt
+    function navModal(dir) {
+        if (!currentShipId) return;
+        const idx = SHIPS.findIndex(s => s.id === currentShipId);
+        const target = SHIPS[(idx + dir + SHIPS.length) % SHIPS.length].id;
+        const doRender = () => {
+            renderModalPanel(target);
+            const btn = $(dir > 0 ? '[data-modal-next]' : '[data-modal-prev]', $('#modalPanel'));
+            if (btn) btn.focus();
+        };
+        if (document.startViewTransition && root.getAttribute('data-perf') === 'max') {
+            document.startViewTransition(doRender);
+        } else {
+            doRender();
+        }
     }
 
     function closeModal() {
@@ -336,12 +481,31 @@
         modal.classList.remove('is-open');
         modal.setAttribute('aria-hidden', 'true');
         document.body.style.overflow = '';
+        currentShipId = null;
         if (lastFocus) lastFocus.focus();
     }
 
     function initModal() {
-        document.addEventListener('click', e => { if (e.target.closest('[data-modal-close]')) closeModal(); });
-        document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#shipModal').classList.contains('is-open')) closeModal(); });
+        document.addEventListener('click', e => {
+            if (e.target.closest('[data-modal-close]')) closeModal();
+            else if (e.target.closest('[data-modal-prev]')) navModal(-1);
+            else if (e.target.closest('[data-modal-next]')) navModal(1);
+        });
+        document.addEventListener('keydown', e => {
+            if (!$('#shipModal').classList.contains('is-open')) return;
+            if (e.key === 'Escape') closeModal();
+            else if (e.key === 'ArrowRight') navModal(1);
+            else if (e.key === 'ArrowLeft') navModal(-1);
+            else if (e.key === 'Tab') {
+                // fokus-fälla: håll Tab inne i panelen
+                const foc = $$('#modalPanel button, #modalPanel a[href]');
+                if (!foc.length) return;
+                const first = foc[0], last = foc[foc.length - 1];
+                if (!$('#modalPanel').contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+                else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
     }
 
     // ==========================================
@@ -354,9 +518,11 @@
         { key: 'weaponRating', label: 'Eldkraft', fmt: v => v + '/100', max: () => 100 }
     ];
 
+    let duelUrlDirty = false; // uppdatera URL:en först efter interaktion/deep-link
+
     function duelCardHTML(ship) {
         return `
-            <div class="dc-visual">${blueprintHTML(ship)}${imageHTML(ship)}</div>
+            <div class="dc-visual in-view">${blueprintHTML(ship)}${imageHTML(ship)}</div>
             <div class="dc-name">${ship.name}</div>
             <div class="dc-klass">${FRANCHISE_LABEL[ship.franchiseId]} · ${ship.year}</div>`;
     }
@@ -408,6 +574,11 @@
         else if (aw > bw) verdict.innerHTML = `<strong>${a.name}</strong> leder ${aw}–${bw} över ${b.name} på de fyra måtten.`;
         else if (bw > aw) verdict.innerHTML = `<strong>${b.name}</strong> leder ${bw}–${aw} över ${a.name} på de fyra måtten.`;
         else verdict.innerHTML = `Dött lopp – ${a.name} och ${b.name} står ${aw}–${bw}.`;
+
+        // Delbar länk: håll URL:en i synk med vald duell (utan att spamma historiken)
+        if (duelUrlDirty && history.replaceState) {
+            history.replaceState(null, '', location.pathname + '?duel=' + a.id + '-vs-' + b.id);
+        }
     }
 
     function initDuel() {
@@ -417,8 +588,34 @@
         selA.innerHTML = opts; selB.innerHTML = opts;
         selA.value = 'millennium-falcon';
         selB.value = 'enterprise-d';
-        selA.addEventListener('change', renderDuel);
-        selB.addEventListener('change', renderDuel);
+
+        // Deep-link: ?duel=<idA>-vs-<idB> förvalda + scrolla dit
+        const param = new URLSearchParams(location.search).get('duel');
+        if (param) {
+            const [aId, bId] = param.split('-vs-');
+            if (shipById(aId)) selA.value = aId;
+            if (shipById(bId)) selB.value = bId;
+            duelUrlDirty = true;
+            setTimeout(() => { const el = $('#duell'); if (el) el.scrollIntoView(); }, 150);
+        }
+
+        selA.addEventListener('change', () => { duelUrlDirty = true; renderDuel(); });
+        selB.addEventListener('change', () => { duelUrlDirty = true; renderDuel(); });
+
+        // Kopiera delbar länk
+        const share = $('#duelShare');
+        if (share) {
+            share.addEventListener('click', async () => {
+                const url = location.href.split('?')[0] + '?duel=' + selA.value + '-vs-' + selB.value;
+                try {
+                    await navigator.clipboard.writeText(url);
+                    toast('Länk till duellen kopierad');
+                } catch (e) {
+                    toast('Kunde inte kopiera – kopiera adressfältet istället');
+                }
+            });
+        }
+
         renderDuel();
     }
 
@@ -471,6 +668,65 @@
     }
 
     // ==========================================
+    // 12b. ARKIVETS VAL (redaktionella topplistor)
+    // ==========================================
+    function initPicks() {
+        const grid = $('#picksGrid');
+        if (!grid || typeof ARCHIVE_PICKS === 'undefined') return;
+        grid.innerHTML = ARCHIVE_PICKS.map((p, i) => {
+            const ship = shipById(p.ship);
+            if (!ship) return '';
+            const sil = SILHOUETTES[ship.sil];
+            return `
+            <article class="pick" style="--ship-accent:${ship.accent}" data-id="${ship.id}" tabindex="0" role="button" aria-label="Visa ${ship.name}" data-aos="fade-up" data-aos-delay="${i * 80}">
+                <span class="pick__index">0${i + 1}</span>
+                <span class="pick__label">${p.label}</span>
+                <h3 class="pick__name">${ship.name}</h3>
+                <p class="pick__blurb">${p.blurb}</p>
+                <span class="pick__cta">Öppna i arkivet <i class="fa-solid fa-arrow-right"></i></span>
+                <span class="pick__sil" aria-hidden="true"><svg viewBox="${sil.vb}"><path d="${sil.d}" fill="currentColor"/></svg></span>
+            </article>`;
+        }).join('');
+        grid.addEventListener('click', e => {
+            const el = e.target.closest('.pick');
+            if (el) openModal(el.dataset.id);
+        });
+        grid.addEventListener('keydown', e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                const el = e.target.closest('.pick');
+                if (el) { e.preventDefault(); openModal(el.dataset.id); }
+            }
+        });
+    }
+
+    // ==========================================
+    // 12c. CITAT-VÄGG (scroll-snap)
+    // ==========================================
+    function initQuotes() {
+        const wall = $('#quoteWall');
+        if (!wall) return;
+        wall.innerHTML = SHIPS.map(s => `
+            <figure class="quote-card" style="--ship-accent:${s.accent}">
+                <blockquote>”${s.quote}”</blockquote>
+                <figcaption>${s.name} · ${s.franchise} (${s.year})</figcaption>
+            </figure>`).join('');
+    }
+
+    // ==========================================
+    // 12d. SILUETT-OBSERVER (rit-animation i Max)
+    // ==========================================
+    function initVisualObserver() {
+        const targets = $$('.ship-visual');
+        if (!targets.length) return;
+        const obs = new IntersectionObserver(entries => {
+            entries.forEach(e => {
+                if (e.isIntersecting) { e.target.classList.add('in-view'); obs.unobserve(e.target); }
+            });
+        }, { threshold: 0.3 });
+        targets.forEach(t => obs.observe(t));
+    }
+
+    // ==========================================
     // 13. AOS
     // ==========================================
     function initAOS() {
@@ -480,10 +736,35 @@
     }
 
     // ==========================================
+    // 13b. PWA – registrera service worker
+    // Network-first-SW (se sw.js) → sidan kan aldrig fastna i
+    // gammal cache. Registreras bara över http(s), inte file://.
+    // ==========================================
+    function initPWA() {
+        if (!('serviceWorker' in navigator)) return;
+        if (!/^https?:$/.test(location.protocol)) return;
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                reg.addEventListener('updatefound', () => {
+                    const nw = reg.installing;
+                    if (!nw) return;
+                    nw.addEventListener('statechange', () => {
+                        if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+                            toast('Arkivet har uppdaterats – ladda om för senaste versionen');
+                        }
+                    });
+                });
+            }).catch(() => { /* SW är progressiv förbättring – tyst vid fel */ });
+        });
+    }
+
+    // ==========================================
     // 14. FPS-VAKT – föreslå Lätt vid hackighet
     // ==========================================
     function initFpsGuard() {
         if (root.getAttribute('data-perf') === 'lite') return;
+        // föreslå bara Lätt i auto-läge – tjata inte på den som uttryckligen valt Standard/Max
+        try { if (localStorage.getItem('spaceships:perfMode')) return; } catch (e) {}
         try { if (sessionStorage.getItem('spaceships:fpsChecked')) return; } catch (e) {}
         window.addEventListener('load', () => {
             setTimeout(() => {
@@ -527,7 +808,11 @@
         initDuel();
         initScale();
         initTimeline();
+        initPicks();
+        initQuotes();
+        initVisualObserver();
         initAOS();
+        initPWA();
         initFpsGuard();
     });
 
